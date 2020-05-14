@@ -13,7 +13,7 @@ output:
       toc_depth: 3
 ---
 
-```{r setup, include=FALSE}
+```{r, setup, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE, fig.align = 'left')
 library(magrittr)
 ```
@@ -23,8 +23,8 @@ library(magrittr)
 ### DOI GOES HERE
 
 
-#### [GitHub repository] (ENTER GITHUB HERE)
 
+#### [GitHub repository](https://github.com/icombs2017/rovingDiverDiseaseSurveys.git){target="_blank"}
 ###
 ***
 ### This is the analysis pipeline for FDEP Roving Diver Disease Surveys conducted throughout the Northern Florida Reef Tract
@@ -92,7 +92,7 @@ We can see that the **County** and **Location** columns have been added to the e
 Now we are going to tabulate the all of the disease observations and healthy observations into a **TotalObservations** column. This data set has 11 different keys for "disease" from unknown (**UK**) to black band disease (**BB**), to stony coral tissue loss disease (**SCTLD**), as well as paling (**P**) and bleaching (**BL**).
 
 ```{r, totalObservations, inclue = TRUE}
-rd$TotalObservations <- rd$UK + rd$DS + rd$BB + rd$RB + rd$YB + rd$TLD + rd$WP + rd$WS + rd$P + rd.man$PB + rd$BL + rd$TotalHealthy
+rd$TotalObservations <- rd$UK + rd$DS + rd$BB + rd$RB + rd$YB + rd$TLD + rd$WP + rd$WS + rd$P + rd$PB + rd$BL + rd$TotalHealthy
 head(rd)
 ```
 
@@ -117,9 +117,47 @@ Checking to see that we have our earliest date `head(rd.early)` and our cut-off 
 ***
 Currently the data set has very high resolution, to species level, which may not be necessary for certain reports. Now, using `dplyr` we will tabulate the data into a more concise form. In this example we are assuming that we need to report on data from the time frame we subsetted earlier (November 2017 - June 2019), and the report only needs to know prevalence data by County. Sometimes packages mask other packages so I am specifying that I want to use the function `select` from the package `dplyr` by using the following: `dplyr::select`.
 
-```{r}
-countyData <- rd.early %>% dplyr::select(c(County, MonthYear, SpeciesCode, TLD, Total, SiteCode)) %>% group_by(SiteCode,MonthYear,County) %>% summarise_if(is.integer, sum)
+```{r, countyData, include = TRUE}
+countyData <- rd.early %>% dplyr::select(c(County, MonthYear, SpeciesCode, TLD, TotalObservations, SiteCode)) %>% group_by(SiteCode,MonthYear,County) %>% summarise_if(is.integer, sum)
+countyData
 ```
 To summarize: I am selecting (`dplyr::select()`) from the data the columns of **SiteCode**, **County**, **MonthYear**, **SpeciesCode**, **TLD**, and **TotalObservations**. grouping them (`group_by()`) by  **SiteCode**, **MonthYear**, and **County**; and adding (`summarise_if(is.integer, sum)`) all integers found in that subset (in this case **TLD** and **TotalObservations**). 
+
+<br><br>
+# Calculating Prevalence Data
+***
+We want to calculate SCTLD disease prevalence at our monitoring sites. To do this, we will calculate prevalence by diving our SCTLD observations (**TLD**) from our total number of observations (**TotalObservations**). The syntax used here is very similar to the way we calculated **TotalObservations**. 
+
+```{r, prevalence, include = TRUE}
+countyData$Prevalence = countyData$TLD/countyData$TotalObservations
+head(countyData)
+```
+You can see that we added a **Prevalence** column to the data set!
+<br><br>
+
+# Running PERMANOVA in R
+***
+Now our report needs some analyses. Here we want to see if our prevalence data varies between counties and through time. We will be using a PERMANOVA in R to assess this. We will use the ```adonis()``` function in *vegan*. 
+
+```{r, permanova, include = TRUE}
+
+set.seed(999)
+adonis(formula = Prevalence ~ County*MonthYear, data = countyData, method = "euclidian")
+
+```
+County is significantly different, but Time is not. 
+
+<br><br>
+
+Now lets conduct a pairwise comparison to determine which county (or counties) is driving the variation. We will be using `pairwise.adonis()` from *pairwiseAdonis*.
+
+```{r, pairwisePERMANOVA, incldue = TRUE}
+pairwise.adonis(countyData[c(6)],factors=countyData$County,
+                             sim.method='euclidian',p.adjust.m='bonferroni', perm = 999)
+
+```
+We see that Palm Beach County is significantly different from both Martin County and Broward County. Now its time to visualize this data!
+
+<br><br>.
 
 
