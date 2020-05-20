@@ -55,7 +55,7 @@ This data set contains a count of "TMTC" or "too many to count" so we are adding
 
 ```{r, load, include = "true"}
 rd <- read.xls("../data/RovingDiverSurveys.xlsx", head = T, na.strings ="TMTC")
-class(rd$TotalHealthy)
+class(rd$Healthy)
 head(rd)
 ```
 
@@ -67,6 +67,8 @@ Our first step is to format the dates they can be read by `R`. Reading the data 
 
 ```{r, dateFormat, include = TRUE }
 rd$MonthYear = format(as.Date(as.Date(rd$Date), format = "%y/%m/%d"), "%m-%y")
+rd$Date = as.Date(rd$Date)
+class(rd$Date)
 head(rd)
 ```
 We see that we have MonthYear at the end of the dataset and Date is now in a YYYY-MM-DD format.
@@ -89,10 +91,10 @@ We can see that the **County** and **Location** columns have been added to the e
 
 <br><br>
 
-Now we are going to tabulate the all of the disease observations and healthy observations into a **TotalObservations** column. This data set has 11 different keys for "disease" from unknown (**UK**) to black band disease (**BB**), to stony coral tissue loss disease (**SCTLD**), as well as paling (**P**) and bleaching (**BL**).
+Now we are going to tabulate the all of the disease observations and healthy observations into a **TotalObservations** column. This data set has 11 different keys for "disease" from unknown (**UK**) to black band disease (**BB**), to stony coral tissue loss disease (**SCTLD**), as well as paling (**P**) and bleaching (**BL**). We are combinging all of those, along with the **Healthy** column to have a **TotalObservations** column.
 
 ```{r, totalObservations, inclue = TRUE}
-rd$TotalObservations <- rd$UK + rd$DS + rd$BB + rd$RB + rd$YB + rd$TLD + rd$WP + rd$WS + rd$P + rd$PB + rd$BL + rd$TotalHealthy
+rd$TotalObservations <- rd$UK + rd$DS + rd$BB + rd$RB + rd$YB + rd$SCTLD + rd$WP + rd$WS + rd$P + rd$PB + rd$BL + rd$Healthy
 head(rd)
 ```
 
@@ -103,8 +105,8 @@ head(rd)
 ***
 For the purposes of reporting, you might want to block certain dates out, and only report on certain dates. Here, as an example, we are subsetting everything before July 3, 2019. This code can be modified to capture any time period you may need. We are calling it `rd.early` because it encapsulates the early days of our surveys. I am also subsetting for only our longterm monitoring sites. 
 
-```{r, subsetDate, include = "TRUE"}
-rd.early <- subset(rd, Date < "2019-07-03") %>%  
+```{r, subsetDate, include = TRUE}
+rd.early <- filter(rd, Date < "2019-07-03") %>%  
   subset(SiteCode %in% c("SEFL01", "SEFL02", "SEFL04", "SEFL05", "SEFL06", "SEFL08", "SEFL11", "SEFL12", "SLR North", "SLR South", "SLR Central", "SLR Ledge", "BC1", "T328", "FTL4")) 
 
 head(rd.early)
@@ -118,7 +120,7 @@ Checking to see that we have our earliest date `head(rd.early)` and our cut-off 
 Currently the data set has very high resolution, to species level, which may not be necessary for certain reports. Now, using `dplyr` we will tabulate the data into a more concise form. In this example we are assuming that we need to report on data from the time frame we subsetted earlier (November 2017 - June 2019), and the report only needs to know prevalence data by County. Sometimes packages mask other packages so I am specifying that I want to use the function `select` from the package `dplyr` by using the following: `dplyr::select`.
 
 ```{r, countyData, include = TRUE}
-countyData <- rd.early %>% dplyr::select(c(SiteCode, County, MonthYear, SpeciesCode, TLD, TotalObservations)) %>% group_by(SiteCode,MonthYear,County) %>% summarise_if(is.integer, sum)
+countyData <- rd.early %>% dplyr::select(c(SiteCode, County, MonthYear, SpeciesCode, SCTLD, TotalObservations)) %>% group_by(SiteCode,MonthYear,County) %>% summarise_if(is.integer, sum)
 countyData
 ```
 To summarize: I am selecting (`dplyr::select()`) from the data the columns of **SiteCode**, **County**, **MonthYear**, **SpeciesCode**, **TLD**, and **TotalObservations**. grouping them (`group_by()`) by  **SiteCode**, **MonthYear**, and **County**; and adding (`summarise_if(is.integer, sum)`) all integers found in that subset (in this case **TLD** and **TotalObservations**). 
@@ -129,7 +131,7 @@ To summarize: I am selecting (`dplyr::select()`) from the data the columns of **
 We want to calculate SCTLD disease prevalence at our monitoring sites. To do this, we will calculate prevalence by diving our SCTLD observations (**TLD**) from our total number of observations (**TotalObservations**). The syntax used here is very similar to the way we calculated **TotalObservations**. 
 
 ```{r, prevalence, include = TRUE}
-countyData$Prevalence = countyData$TLD/countyData$TotalObservations
+countyData$Prevalence = countyData$SCTLD/countyData$TotalObservations
 head(countyData)
 ```
 You can see that we added a **Prevalence** column to the data set!
@@ -207,6 +209,7 @@ martin.prev.plot1 <-
   labs(y = "Prevalence")+
     annotate("label", x = 2.45, y = 0.45, label = paste ("Martin County"), size = 5)+
   scale_x_discrete(limits = c("11-17","12-17","01-18", "04-18", "05-18", "06-18", "08-18", "11-18", "12-18", "02-19", "03-19", "04-19", "05-19", "06-19"), labels = c("Nov 17","Dec 17","Jan 18", "Apr 18", "May 18", "Jun 18", "Aug 18", "Nov 18", "Dec 18", "Feb 19", "Mar 19", "Apr 19", "May 19", "Jun 19"))+
+  labs(color = "Site")+
   ylim(0,0.5)
 
 # takes the legend and saves it as a separate object (grob)
@@ -233,7 +236,6 @@ martin.prev.plot <- martin.prev.plot1 +
         )
 
 
-#martin.prev.plot <- martin.prev.plot + rremove("legend")
 martin.prev.plot 
 
 
@@ -249,6 +251,7 @@ palm.prev.plot1 <-
   geom_point()+
   annotate("label", x = 2.45, y = 0.45, label = paste ("Palm Beach County"), size = 5)+
   scale_x_discrete(limits = c("11-17","12-17","01-18", "04-18", "05-18", "06-18", "08-18", "11-18", "12-18", "02-19", "03-19", "04-19", "05-19", "06-19"), labels = c("Nov 17","Dec 17","Jan 18", "Apr 18", "May 18", "Jun 18", "Aug 18", "Nov 18", "Dec 18", "Feb 19", "Mar 19", "Apr 19", "May 19", "Jun 19"))+
+    labs(color = "Site")+
   ylim(0,0.5)
   
 
@@ -274,7 +277,7 @@ palm.prev.plot <- palm.prev.plot1+
         axis.text.x=element_blank(),
         axis.text.y=element_text(size=12, color="black")
         )
-#palm.prev.plot <- palm.prev.plot + rremove("legend")
+
 palm.prev.plot
 ```
 <br><br>
@@ -285,11 +288,10 @@ broward.prev.plot1 <-
   ggplot(broward, aes(x=MonthYear, y=Prevalence, color = SiteCode, group = SiteCode, label = SiteCode))+
   geom_line()+
   geom_point()+
-  #geom_boxplot()+
   scale_x_discrete(limits = c("11-17","12-17","01-18", "04-18", "05-18", "06-18", "08-18", "11-18", "12-18", "02-19", "03-19", "04-19", "05-19", "06-19"), labels = c("Nov 17","Dec 17","Jan 18", "Apr 18", "May 18", "Jun 18", "Aug 18", "Nov 18", "Dec 18", "Feb 19", "Mar 19", "Apr 19", "May 19", "Jun 19"))+
   ylim(0,0.5)+
   annotate("label", x = 2.45, y = 0.45, label = paste ("Broward County"), size = 5) +
-  labs(y = "Prevalence", x = "Month")
+  labs(y = "Prevalence", x = "Month", color = "Site")
 
  
 
@@ -313,8 +315,6 @@ broward.prev.plot <- broward.prev.plot1+
         axis.text.y=element_text(size=12, color="black")
         )
 
-#broward.prev.plot <- broward.prev.plot + rremove("legend")
-
 broward.prev.plot
 ```
 <br><br>
@@ -322,7 +322,7 @@ broward.prev.plot
 You might have noticed that only the Broward County plot had labels and titles along the x-axis. That is because we are going to stack the plots using *patchwork* and saving it in our figures folder.
 
 
-```{r, stacked plot, include = TRUE}
+```{r, stacked plot, include = TRUE, fig.width = 12, fig.height = 8}
 
 stacked.plot <- (martin.prev.plot / palm.prev.plot / broward.prev.plot) 
 
