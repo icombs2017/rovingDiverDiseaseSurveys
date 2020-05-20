@@ -1,0 +1,4 @@
+"0","nitr::opts_chunk$set(warning = FALSE, fig.align = 'left')
+"
+"2","Error in loadNamespace(name) : there is no package called ‘nitr’
+"

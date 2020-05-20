@@ -5,16 +5,16 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "776767381",
+    "hash" : "2681009206",
     "id" : "545F03FF",
-    "lastKnownWriteTime" : 1589475414,
-    "last_content_update" : 1589475414995,
+    "lastKnownWriteTime" : 1589986826,
+    "last_content_update" : 1589986826625,
     "path" : "~/Documents/GitHub/rovingDiverDiseaseSurveys/code/rovingDiverAnalysis.Rmd",
     "project_path" : "rovingDiverAnalysis.Rmd",
     "properties" : {
-        "cursorPosition" : "160,9",
-        "last_setup_crc32" : "235C2AA1ea12fac1",
-        "scrollLine" : "149"
+        "cursorPosition" : "69,0",
+        "last_setup_crc32" : "",
+        "scrollLine" : "66"
     },
     "relative_order" : 1,
     "source_on_save" : false,

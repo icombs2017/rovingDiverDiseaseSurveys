@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1589476888864.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "E253F7A6",
+    "lastKnownWriteTime" : 1588898184,
+    "last_content_update" : 1588898184,
+    "path" : "~/Documents/GitHub/rovingDiverDiseaseSurveys/code/tag variance.R",
+    "project_path" : "tag variance.R",
+    "properties" : {
+        "cursorPosition" : "28,29",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
