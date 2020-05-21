@@ -334,6 +334,68 @@ stacked.plot
 
 
 
+```{r}
+
+g.error.prev <- ggplot(g.prev, aes(date, prevalence, group = location, fill = location, color = location))+
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin = prevalence - stderror, 
+                    ymax = prevalence + stderror), 
+                width = .5)+
+  theme(plot.title = element_text(hjust = 0.5), axis.line = element_line(colour = "black"), axis.ticks = element_line(color="black"), text = element_text(size=15, color="black"), axis.text.x=element_text(size=12, color="black"), axis.text.y=element_text(size=12, color="black")) +
+  #stat_summary(geom = 'errorbar', fun.data = mean_se, position = "dodge")+
+  scale_x_discrete(name = "Month",limits=c("Nov.17","Dec.17","Jan.18", "Apr.18", "May.18", "Jun.18", "Aug.18", "Nov.18", "Dec.18", "Feb.19", "Mar.19", "Apr.19", "May.19", "Jun.19"), labels =c("Nov 17","Dec 17","Jan 18", "Apr 18", "May 18", "Jun 18", "Aug 18", "Nov 18", "Dec 18", "Feb 19", "Mar 19", "Apr 19", "May 19", "Jun 19"))+
+  ylim(0,0.5)+
+  labs(y = "Prevalence", x = "Month")
+g.error.prev
+
+g.error.prev <- g.error.prev + theme(
+                panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "white"),                 panel.background = element_rect(fill = '#F5F5F5'), 
+                plot.title = element_text(hjust = 0.5), 
+                axis.line = element_line(colour = "black"), 
+                axis.ticks = element_line(color="black"), 
+                text = element_text(size=20, color="black"), 
+                axis.text.x=element_text(angle = 45, hjust = 1, size=14, color="black"), 
+                axis.text.y=element_text(size=12, color="black")
+                )
+
+
+
+
+ggsave("prev.global.eps", plot= g.error.prev, width=12, height=8, units="in", dpi=600)
+
+#gainsboro = #DCDCDC	
+#light gray = #D3D3D3	
+#white smoke = #F5F5F5
+
+prev <- read.csv("prev.county.csv", header = TRUE)
+head(prev)
+
+
+error.prev <- ggplot(prev, aes(date, prevalence, group = county, fill = county, color = county))+
+  geom_point()+
+  geom_line()+
+  geom_errorbar(aes(ymin = prevalence - stderror, 
+                    ymax = prevalence + stderror),
+                width = 0.5)+
+  #stat_summary(geom = 'errorbar', fun.data = mean_se, position = "dodge")+
+  scale_x_discrete(name = "Month",limits=c("Nov.17","Dec.17","Jan.18", "Apr.18", "May.18", "Jun.18", "Aug.18", "Nov.18", "Dec.18", "Feb.19", "Mar.19", "Apr.19", "May.19", "Jun.19"), labels =c("Nov 17","Dec 17","Jan 18", "Apr 18", "May 18", "Jun 18", "Aug 18", "Nov 18", "Dec 18", "Feb 19", "Mar 19", "Apr 19", "May 19", "Jun 19"))+
+  ylim(0,0.5)+
+  labs(y = "Prevalence", x = "Month")
+error.prev
+
+error.prev <- error.prev+ theme(
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "white"),                 panel.background = element_rect(fill = '#F5F5F5'), 
+  plot.title = element_text(hjust = 0.5), 
+  axis.line = element_line(colour = "black"), 
+  axis.ticks = element_line(color="black"), 
+  text = element_text(size=20, color="black"), 
+  axis.text.x=element_text(angle = 45, hjust = 1, size=14, color="black"), 
+  axis.text.y=element_text(size=12, color="black")
+)
+ggsave("prev.county.eps", plot= error.prev, width=12, height=8, units="in", dpi=600)
+
+```
 
 
 
