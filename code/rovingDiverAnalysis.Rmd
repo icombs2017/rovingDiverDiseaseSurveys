@@ -78,7 +78,7 @@ We see that we have MonthYear at the end of the dataset and Date is now in a YYY
 We also want to add a few more columns like **County**, **Location**, **Total Observations**, and **Prevalence**. We will start with adding **County** and **Location**. <br><br>Our dataset includes surveys across three counties, at four different locations, but they are entered into the data set at the individual site level (**SiteCode**). It is often helpful, especially when reporting, to report at the County level or even by location. **SiteCode** is the individual sites where surveys occur (ex: SEFL05, T328, BC1, etc), **Location** is the general area where operations occur (ex: Jupiter, Lauderdale-by-the-Sea), and **County** is the county where operations occur (ex: Martin County, Palm Beach County, and Broward County). 
 
 ```{r, countyLocation, include = TRUE }
-rd$County = if_else(rd$SiteCode %in% c("SEFL01", "SEFL02", "SEFL 03", "SLR South", "SLR Central", "SLR Ledge", "SLR North"), "Martin", 
+rd$County = if_else(rd$SiteCode %in% c("SEFL01", "SEFL02", "SEFL03", "SLR South", "SLR Central", "SLR Ledge", "SLR North"), "Martin", 
                        if_else(rd$SiteCode %in% c("T328", "BC1", "FTL4"), "Broward", "Palm Beach"))
 
 rd$Location= if_else(rd$SiteCode %in% c("SEFL01", "SEFL02", "SEFL03", "SLR South", "SLR Central", "SLR Ledge", "SLR North"), "SLR",

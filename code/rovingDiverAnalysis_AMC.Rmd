@@ -43,6 +43,7 @@ For the following analyses we will require the use of a number of different R pa
 if (!require("pacman")) install.packages("pacman") 
 pacman::p_load(ggplot2, stringr, gridExtra, ggpubr, Rmisc, FSA, rcompanion, RColorBrewer, dplyr, vegan, nparcomp, RVAideMemoire, MANOVA.RM, pairwiseAdonis, PMCMR, PMCMRplus, patchwork, plyr, gdata)
 pacman::p_load_gh("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+# cmd enter to run r code, do not include the orange after the tick marks
 
 ```
 <br><br>
@@ -99,6 +100,12 @@ head(rd)
 ```
 
 
+```{r, thermalstrss, include = TRUE}
+rd$ThermalStress <- rd$P + rd$PB + rd$BL
+head(rd)
+
+```
+
 
 
 # Subsetting by Date
@@ -106,11 +113,15 @@ head(rd)
 For the purposes of reporting, you might want to block certain dates out, and only report on certain dates. Here, as an example, we are subsetting everything before July 3, 2019. This code can be modified to capture any time period you may need. We are calling it `rd.early` because it encapsulates the early days of our surveys. I am also subsetting for only our longterm monitoring sites. 
 
 ```{r, subsetDate, include = TRUE}
-rd.early <- filter(rd, Date < "2019-07-03") %>%  
+rd.late <- filter(rd, Date > "2019-06-21") %>%  
+  #changed to rd.late  and filtered for dates JUly 2019-May2020
+  #changed the '<' to a '>"
+  # put the date before the date that you need 
   subset(SiteCode %in% c("SEFL01", "SEFL02", "SEFL04", "SEFL05", "SEFL06", "SEFL08", "SEFL11", "SEFL12", "SLR North", "SLR South", "SLR Central", "SLR Ledge", "BC1", "T328", "FTL4")) 
 
-head(rd.early)
-tail(rd.early)
+head(rd.late)
+tail(rd.late)
+#don't forget to change these too! 
 ```
 Checking to see that we have our earliest date `head(rd.early)` and our cut-off date `tail(rd.early)` to confirm the subset worked.
 <br><br>
@@ -119,23 +130,133 @@ Checking to see that we have our earliest date `head(rd.early)` and our cut-off 
 ***
 Currently the data set has very high resolution, to species level, which may not be necessary for certain reports. Now, using `dplyr` we will tabulate the data into a more concise form. In this example we are assuming that we need to report on data from the time frame we subsetted earlier (November 2017 - June 2019), and the report only needs to know prevalence data by County. Sometimes packages mask other packages so I am specifying that I want to use the function `select` from the package `dplyr` by using the following: `dplyr::select`.
 
-```{r, countyData, include = TRUE}
-countyData <- rd.early %>% dplyr::select(c(SiteCode, County, MonthYear, SpeciesCode, SCTLD, TotalObservations)) %>% group_by(SiteCode,MonthYear,County) %>% summarise_if(is.integer, sum)
-countyData
+```{r, Location Data, include = TRUE}
+Location <- rd.late %>% dplyr::select(c(Location, Date, SpeciesCode, UK, DS, BB, RB, YB, WP, WS, ThermalStress, SCTLD, Healthy, TotalObservations)) %>% group_by(Date,Location) %>%
+  summarise_if(is.integer, sum)
+  
+# LEFT OFF AT TRYING TO EXCLUDE ZEROS FROM SHOWING
+#I do not want site code included, I only want to group by location, so I excluded site code
+#include healthy count
+# I  put mine as date, so I can see the full date
+Location
+#grouped by location
+
+
 ```
+
+
+```{r, Diseaseprevalences, include = TRUE}
+Location$SCTLDPrevalence = Location$SCTLD/Location$TotalObservations
+Location$UKPrevalence = Location$UK/Location$TotalObservations
+Location$BBPrevalence = Location$BB/Location$TotalObservations
+Location$RBPrevalence = Location$RB/Location$TotalObservations
+Location$YBPrevalence = Location$YB/Location$TotalObservations
+Location$WPPrevalence = Location$WP/Location$TotalObservations
+Location$ThermalStressPrevalence = Location$ThermalStress/Location$TotalObservations
+Location
+#changed again from County to location
+
+```
+
+
+```{r, Diseaseprevalences, include = TRUE}
+library(dplyr)
+Ordered<-Location %>% dplyr::select(c(Date,Location,TotalObservations, SCTLD, SCTLDPrevalence,UK, UKPrevalence, BB, BBPrevalence, RB, RBPrevalence, YB, YBPrevalence, WP,WPPrevalence,ThermalStress,ThermalStressPrevalence))
+
+Ordered
+#Ordering so that it is easier to read when writting the paragraph summaries
+
+
+
+```
+
+
+
+
+
+```{r}
+
+library(dplyr)
+Prevalence<- Ordered[, colSums(Ordered !=0)>0]
+Prevalence
+#This is getting rid of the columns that all had zeros and will be left out of the summary paragraphs
+#With the Prevalence data you should be able to write the first few sentences of the summary paragraphs the next step will be to sort by species
+
+
+```
+
 To summarize: I am selecting (`dplyr::select()`) from the data the columns of **SiteCode**, **County**, **MonthYear**, **SpeciesCode**, **TLD**, and **TotalObservations**. grouping them (`group_by()`) by  **SiteCode**, **MonthYear**, and **County**; and adding (`summarise_if(is.integer, sum)`) all integers found in that subset (in this case **TLD** and **TotalObservations**). 
 
 <br><br>
+
 # Calculating Prevalence Data
 ***
-We want to calculate SCTLD disease prevalence at our monitoring sites. To do this, we will calculate prevalence by diving our SCTLD observations (**TLD**) from our total number of observations (**TotalObservations**). The syntax used here is very similar to the way we calculated **TotalObservations**. 
+We want to calculate SCTLD disease prevalence at our monitoring sites. To do this, we will calculate prevalence by dividing our SCTLD observations (**TLD**) from our total number of observations (**TotalObservations**). The syntax used here is very similar to the way we calculated **TotalObservations**. 
 
-```{r, prevalence, include = TRUE}
-countyData$Prevalence = countyData$SCTLD/countyData$TotalObservations
-head(countyData)
+OLD CODE{r, Diseaseprevalences, include = TRUE}
+Location$SCTLDPrevalence = Location$SCTLD/Location$TotalObservations
+Location$UKPrevalence = Location$UK/Location$TotalObservations
+Location$BBPrevalence = Location$BB/Location$TotalObservations
+Location$RBPrevalence = Location$RB/Location$TotalObservations
+Location$YBPrevalence = Location$YB/Location$TotalObservations
+Location$WPPrevalence = Location$WP/Location$TotalObservations
+Location$ThermalStressPrevalence = Location$ThermalStress/Location$TotalObservations
+Location
+#changed again from County to location
+#SCTLD prevelance will be the next thing mentioned in the paragraph summaries
 ```
-You can see that we added a **Prevalence** column to the data set!
+You can see that we added a **SCTLDPrevalence** column to the data set!
 <br><br>
+OLD CODE{r, Other Disease prevalence, include = TRUE}
+SiteLocation$SCTLDPrevalence = SiteLocation$SCTLD/SiteLocation$TotalObservations
+head(SiteLocation)
+#changed again from County to location
+#SCTLD prevelance will be the next thing mentioned in the paragraph summaries
+```
+
+
+#Summarizing Species Data
+***
+The next section of the summary paragraphs will include the prevelance of total colonies observed
+
+
+```{r}
+Species<- rd.late %>% dplyr::select(c(Location, Date, SpeciesCode, UK, DS, BB, RB, YB, WP, WS, ThermalStress, SCTLD, Healthy, TotalObservations)) %>% group_by(Date,Location,SpeciesCode) %>% summarise_if(is.integer, sum)
+Species
+
+#Now we are seperating by species code
+```
+d$County = if_else(rd$SiteCode %in% c("SEFL01", "SEFL02", "SEFL 03", "SLR South", "SLR Central", "SLR Ledge", "SLR North"), "Martin", 
+                       if_else(rd$SiteCode %in% c("T328", "BC1", "FTL4"), "Broward", "Palm Beach"))
+
+rd$Location= if_else(rd$SiteCode %in% c("SEFL01", "SEFL02", "SEFL03", "SLR South", "SLR Central", "SLR Ledge", "SLR North"), "SLR",
+                       if_else(rd$SiteCode %in% c("T328", "BC1", "FTL4"), "PMP",
+                       if_else(rd$SiteCode %in% c("SEFL04", "SEFL05", "SEFL06"), "JUP",
+                       if_else(rd$SiteCode %in% c("SEFL08", "SEFL09", "SEFL10", "SEFL11", "SEFL12"), "WPB", ""))))
+head(rd)
+```{r}
+Species$SpeciesName = if_else(Species$SpeciesCode %in% c("AAGA"), "Agaricia.agaricites", if_else(Species$SpeciesCode %in% c("ACER"), "Acropora.cervicornis", if_else(Species$SpeciesCode %in% c("AFRA"), "Agaricia.fragilis", if_else(Species$SpeciesCode %in% c("ALAM"), "Agaricia.larcki",if_else(Species$SpeciesCode %in% c("CNAT"), "Colpophyllia.natans", if_else(Species$SpeciesCode %in% c("DSLAB"),"Diploria.labyrinthiformis", if_else(Species$SpeciesCode %in% c("DSTO"), "Dichocoenia.stokesi",if_else(Species$SpeciesCode %in% c("EFAS"), "Eusmilia.fastigiata", if_else(Species$SpeciesCode %in% c("FFRA"), "Favia.fragum", if_else(Species$SpeciesCode %in% c("HCUC"), "Helioseris.cucullata", if_else(Species$SpeciesCode %in% c("ISIN"), "Isophyllia.sinuosa", if_else(Species$SpeciesCode %in% c("MALC"), "Millepora.alcicornis", if_else(Species$SpeciesCode %in% c("MALI"), "Mycetophyllia.aliciae", if_else(Species$SpeciesCode %in% c("MANG"), "Mussa.angulosa", if_else(Species$SpeciesCode %in% c("MAUR"), "Madracis.auretenra", if_else(Species$SpeciesCode %in% c("MCAV"), "Montastrea.cavernosa", if_else(Species$SpeciesCode %in% c("MDAN"), "Mycetophylli.adanaana", if_else(Species$SpeciesCode %in% c("MDEC"), "Madracis.decactis", if_else(Species$SpeciesCode %in% c("MMEA"), "Meandrina.meandrites", if_else(Species$SpeciesCode %in% c("MFER"), "Mycetophyllia.ferox", if_else(Species$SpeciesCode %in% c("MFOR"), "Madracis.formosa",if_else(Species$SpeciesCode %in% c("MLAM"), "Mycetophyllia.lamarckiana", if_else(Species$SpeciesCode %in% c("MMEA"), "Meandrina.meandrites", if_else(Species$SpeciesCode %in% c("MPHA"), "Madracis.pharensis", if_else(Species$SpeciesCode %in% c("OANN"), "Orbicella.annularis", if_else(Species$SpeciesCode %in% c("ODIF"), "Oculina.diffusa", if_else(Species$SpeciesCode %in% c("OFAV"), "Orbicella.faveolata", if_else(Species$SpeciesCode %in% c("OFRA"), "Orbicella.franksi", if_else(Species$SpeciesCode %in% c("OVAR"), "Oculina.varicosa", if_else(Species$SpeciesCode %in% c("PAST"), "Porites.astreoides", if_else(Species$SpeciesCode %in% c("PCLI"), "Pseudodiploria.clivosa", if_else(Species$SpeciesCode %in% c("PFUR"), "Porites.furcata", if_else(Species$SpeciesCode %in% c("DLAB"), "Diploria.labyrinthiformis", if_else(Species$SpeciesCode %in% c("PPOR"), "Porites.porites",if_else(Species$SpeciesCode %in% c("PSTR"), "Pseudodiplorias.trigosa", if_else(Species$SpeciesCode %in% c("SBOU"), "Solenastrea.bournoni", if_else(Species$SpeciesCode %in% c("SCOL"), "Solymia.sp", if_else(Species$SpeciesCode %in% c("SCUB"), "Scolymia.cubensis", if_else(Species$SpeciesCode %in% c("SINT"), "Stephanocoenia.intersepta", if_else(Species$SpeciesCode %in% c("SRAD"), "Siderastrea.radians", if_else(Species$SpeciesCode %in% c("SSID"), "Siderastrea.siderea", if_else(Species$SpeciesCode %in% c("MYCE"), "Mycetophyllia.sp", ""))))))))))))))))))))))))))))))))))))))))))
+head(Species)
+```
+
+
+
+
+```{r}
+ SpeciesT<- Species[, colSums(Species !=0)>0]
+#Getting rid of zero output data columns
+```
+
+
+```{r}
+
+SpeciesP <- SpeciesT %>% group_by(Date, Location) %>% mutate(SiteTotal = sum(TotalObservations)) %>%     mutate(SpeciesPrevalence=TotalObservations/SiteTotal) %>% group_by(Date, Location) %>% arrange(desc(SpeciesPrevalence))
+  
+  #We are adding a new SiteTotal Column in order to calculate prevalence in the next step
+```
+
+
+
 
 # Running PERMANOVA in R
 ***
@@ -334,68 +455,6 @@ stacked.plot
 
 
 
-```{r}
-
-g.error.prev <- ggplot(g.prev, aes(date, prevalence, group = location, fill = location, color = location))+
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin = prevalence - stderror, 
-                    ymax = prevalence + stderror), 
-                width = .5)+
-  theme(plot.title = element_text(hjust = 0.5), axis.line = element_line(colour = "black"), axis.ticks = element_line(color="black"), text = element_text(size=15, color="black"), axis.text.x=element_text(size=12, color="black"), axis.text.y=element_text(size=12, color="black")) +
-  #stat_summary(geom = 'errorbar', fun.data = mean_se, position = "dodge")+
-  scale_x_discrete(name = "Month",limits=c("Nov.17","Dec.17","Jan.18", "Apr.18", "May.18", "Jun.18", "Aug.18", "Nov.18", "Dec.18", "Feb.19", "Mar.19", "Apr.19", "May.19", "Jun.19"), labels =c("Nov 17","Dec 17","Jan 18", "Apr 18", "May 18", "Jun 18", "Aug 18", "Nov 18", "Dec 18", "Feb 19", "Mar 19", "Apr 19", "May 19", "Jun 19"))+
-  ylim(0,0.5)+
-  labs(y = "Prevalence", x = "Month")
-g.error.prev
-
-g.error.prev <- g.error.prev + theme(
-                panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "white"),                 panel.background = element_rect(fill = '#F5F5F5'), 
-                plot.title = element_text(hjust = 0.5), 
-                axis.line = element_line(colour = "black"), 
-                axis.ticks = element_line(color="black"), 
-                text = element_text(size=20, color="black"), 
-                axis.text.x=element_text(angle = 45, hjust = 1, size=14, color="black"), 
-                axis.text.y=element_text(size=12, color="black")
-                )
-
-
-
-
-ggsave("prev.global.eps", plot= g.error.prev, width=12, height=8, units="in", dpi=600)
-
-#gainsboro = #DCDCDC	
-#light gray = #D3D3D3	
-#white smoke = #F5F5F5
-
-prev <- read.csv("prev.county.csv", header = TRUE)
-head(prev)
-
-
-error.prev <- ggplot(prev, aes(date, prevalence, group = county, fill = county, color = county))+
-  geom_point()+
-  geom_line()+
-  geom_errorbar(aes(ymin = prevalence - stderror, 
-                    ymax = prevalence + stderror),
-                width = 0.5)+
-  #stat_summary(geom = 'errorbar', fun.data = mean_se, position = "dodge")+
-  scale_x_discrete(name = "Month",limits=c("Nov.17","Dec.17","Jan.18", "Apr.18", "May.18", "Jun.18", "Aug.18", "Nov.18", "Dec.18", "Feb.19", "Mar.19", "Apr.19", "May.19", "Jun.19"), labels =c("Nov 17","Dec 17","Jan 18", "Apr 18", "May 18", "Jun 18", "Aug 18", "Nov 18", "Dec 18", "Feb 19", "Mar 19", "Apr 19", "May 19", "Jun 19"))+
-  ylim(0,0.5)+
-  labs(y = "Prevalence", x = "Month")
-error.prev
-
-error.prev <- error.prev+ theme(
-  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "white"),                 panel.background = element_rect(fill = '#F5F5F5'), 
-  plot.title = element_text(hjust = 0.5), 
-  axis.line = element_line(colour = "black"), 
-  axis.ticks = element_line(color="black"), 
-  text = element_text(size=20, color="black"), 
-  axis.text.x=element_text(angle = 45, hjust = 1, size=14, color="black"), 
-  axis.text.y=element_text(size=12, color="black")
-)
-ggsave("prev.county.eps", plot= error.prev, width=12, height=8, units="in", dpi=600)
-
-```
 
 
 

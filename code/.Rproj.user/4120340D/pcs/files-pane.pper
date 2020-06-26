@@ -1,9 +1,9 @@
 {
-    "path" : "~/Documents/GitHub/rovingDiverDiseaseSurveys/code",
-    "sortOrder" : [
+    "path": "~/Documents/GitHub/rovingDiverDiseaseSurveys/code",
+    "sortOrder": [
         {
-            "ascending" : true,
-            "columnIndex" : 2
+            "columnIndex": 2,
+            "ascending": true
         }
     ]
 }
